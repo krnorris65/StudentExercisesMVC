@@ -14,7 +14,7 @@ namespace StudentExercisesMVC.Models.ViewModels
         public List<SelectListItem> Exercises { get; set; }
         public List<SelectListItem> Instructors { get; set; }
 
-        public List<int> AssignedExercises { get; set; }
+        public List<int> AssignedExercises { get; set; } = new List<int>();
         public int InstructorId { get; set; }
 
         //Modify your student edit form to display all exercises in a multi-select element.The user should be able to select one, or more exercises, in that element. When the user submits the form, then the StudentExercises table in your database should have a new entry added for each of the exercises that were selected in the form.
@@ -46,6 +46,8 @@ namespace StudentExercisesMVC.Models.ViewModels
         public StudentEditViewModel(Student student, List<Cohort> cohortList, List<Instructor> instructorList, List<Exercise> exerciseList)
         {
             Student = student;
+            //add exercises that are already assigned to the student to the AssignExercise list
+            student.Exercises.ForEach(exercise => AssignedExercises.Add(exercise.Id));
             //use cohort data to create a list of select items
             Cohorts = cohortList
                 .Select(cohort => new SelectListItem
@@ -79,6 +81,7 @@ namespace StudentExercisesMVC.Models.ViewModels
                         Value = e.Id.ToString()
                     })
                     .ToList();
+                
             }
         }
     }
