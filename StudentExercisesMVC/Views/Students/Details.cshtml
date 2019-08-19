@@ -47,6 +47,15 @@
             @Html.DisplayFor(model => model.FullName)
         </dd>
     </dl>
+    <h4>Assigned Exercises:</h4>
+    <ul>
+        @foreach (var exercise in Model.Exercises)
+        {
+            <li>
+                @exercise.Name (@exercise.Language)
+            </li>
+        }
+    </ul>
 </div>
 <div>
     @Html.ActionLink("Edit", "Edit", new {id=Model.Id}) |
