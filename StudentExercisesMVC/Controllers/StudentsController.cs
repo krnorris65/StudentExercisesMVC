@@ -41,8 +41,10 @@ namespace StudentExercisesMVC.Controllers
                                     s.FirstName,
                                     s.LastName,
                                     s.SlackHandle,
-                                    s.CohortId
+                                    s.CohortId,
+                                    c.Name
                                 FROM Student s
+                                JOIN Cohort c ON c.Id = s.CohortId
                             ";
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -56,6 +58,12 @@ namespace StudentExercisesMVC.Controllers
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
                             SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
                             CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))
+                        };
+
+                        student.Cohort = new Cohort
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
                         };
 
                         students.Add(student);
@@ -246,10 +254,12 @@ namespace StudentExercisesMVC.Controllers
                                 s.LastName,
                                 s.SlackHandle,
                                 s.CohortId,
+                                c.Name,
                                 e.Id AS ExerciseId,
                                 e.Name,
                                 e.Language
                             FROM Student s
+                            JOIN Cohort c ON c.Id = s.CohortId
                             LEFT JOIN StudentExercise se ON se.StudentId = @Id
                             LEFT JOIN Exercise e ON e.Id = se.ExerciseId
                             WHERE s.Id=@Id";
@@ -268,6 +278,12 @@ namespace StudentExercisesMVC.Controllers
                                 LastName = reader.GetString(reader.GetOrdinal("LastName")),
                                 SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
                                 CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))
+                            };
+
+                            student.Cohort = new Cohort
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
                             };
                         }
 
