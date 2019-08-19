@@ -21,6 +21,7 @@ namespace StudentExercisesMVC.Models
         public string Specialty { get; set; }
         [Required]
         public int CohortId { get; set; }
+        [Display(Name = "Cohort")]
         public Cohort Cohort { get; set; }
 
         [Display(Name = "Full Name")]
