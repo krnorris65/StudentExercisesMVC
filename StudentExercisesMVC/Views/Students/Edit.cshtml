@@ -31,6 +31,24 @@
                 <label asp-for="Cohorts" class="control-label">Cohort</label>
                 <select asp-for="Student.CohortId" asp-items="@Model.Cohorts"></select>
             </div>
+            <h3>Assign Exercises</h3>
+            @if (@Model.Instructors != null)
+            {
+                <div class="form-group">
+                    <label asp-for="Instructors" class="control-label">Which instructor assigned the exercises?</label>
+                    <select asp-for="InstructorId" asp-items="@Model.Instructors"></select>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Exercises" class="control-label">Assign Exercises:</label>
+                    <select asp-for="AssignedExercises" multiple asp-items="@Model.Exercises"></select>
+                </div>
+            }
+            else
+            {
+                <div class="form-group">
+                    <p class="control-label">You must assign an instructor to the cohort before you are able to assign exercises to the student.</p>
+                </div>
+            }
             <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-default" />
             </div>
