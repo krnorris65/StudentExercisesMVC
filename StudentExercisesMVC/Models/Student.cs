@@ -20,7 +20,7 @@ namespace StudentExercisesMVC.Models
         public string SlackHandle { get; set; }
         public int CohortId { get; set; }
         public Cohort Cohort { get; set; }
-        public List<Exercise> Exercises { get; set; }
+        public List<Exercise> Exercises { get; set; } = new List<Exercise>();
 
         [Display(Name = "Full Name")]
         public string FullName

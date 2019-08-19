@@ -124,8 +124,11 @@ namespace StudentExercisesMVC.Controllers
         {
             Student student = GetStudentById(id);
             var cohorts = GetAllCohorts();
+            var instructors = GetInstructorsForStudentCohort(student.CohortId);
+            var exercises = GetAllExercises();
             var viewModel = new StudentEditViewModel(student, cohorts);
-            return View(viewModel);
+            var newViewModel = new StudentEditViewModel(student, cohorts, instructors, exercises);
+            return View(newViewModel);
         }
 
         // POST: Students/Edit/5
@@ -147,7 +150,8 @@ namespace StudentExercisesMVC.Controllers
                                 LastName =  @lastName, 
                                 SlackHandle = @slackHandle, 
                                 CohortId = @cohortId
-                            WHERE Id = @id";
+                            WHERE Id = @id;";
+
                         cmd.Parameters.Add(new SqlParameter("@firstName", model.Student.FirstName));
                         cmd.Parameters.Add(new SqlParameter("@lastName", model.Student.LastName));
                         cmd.Parameters.Add(new SqlParameter("@slackHandle", model.Student.SlackHandle));
@@ -155,6 +159,34 @@ namespace StudentExercisesMVC.Controllers
                         cmd.Parameters.Add(new SqlParameter("@id", id));
                         cmd.ExecuteNonQuery();
 
+                        if (model.InstructorId > 0)
+                        {
+                            cmd.CommandText = @"
+                            DELETE FROM StudentExercise
+                            WHERE StudentId = @studentId;";
+
+                            //reset the paramters
+                            cmd.Parameters.Clear();
+                            cmd.Parameters.Add(new SqlParameter("@studentId", id));
+                            cmd.ExecuteNonQuery();
+
+                            cmd.CommandText = @"INSERT INTO StudentExercise(StudentId, ExerciseId, InstructorId)
+                                    VALUES(@studentId, @exerciseId, @instructorId);";
+
+                            foreach(var exercise in model.AssignedExercises)
+                            {
+                                //reset the parameters
+                                cmd.Parameters.Clear();
+                                cmd.Parameters.Add(new SqlParameter("@studentId", id));
+                                cmd.Parameters.Add(new SqlParameter("@exerciseId", exercise));
+                                cmd.Parameters.Add(new SqlParameter("@instructorId", model.InstructorId));
+                                //command text is the same each time, but the parameters will reset
+                                cmd.ExecuteNonQuery();
+
+
+                            }
+
+                        }
                     }
                 }
 
@@ -213,24 +245,43 @@ namespace StudentExercisesMVC.Controllers
                                 s.FirstName,
                                 s.LastName,
                                 s.SlackHandle,
-                                s.CohortId
+                                s.CohortId,
+                                e.Id AS ExerciseId,
+                                e.Name,
+                                e.Language
                             FROM Student s
-                            WHERE s.Id=@Id
-                        ";
+                            LEFT JOIN StudentExercise se ON se.StudentId = @Id
+                            LEFT JOIN Exercise e ON e.Id = se.ExerciseId
+                            WHERE s.Id=@Id";
                     cmd.Parameters.Add(new SqlParameter("@Id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     Student student = null;
-                    if (reader.Read())
+                    while (reader.Read())
                     {
-                        student = new Student
+                        if (student == null)
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
-                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))
-                        };
+                            student = new Student
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
+                                CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))
+                            };
+                        }
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("ExerciseId")))
+                        {
+                            student.Exercises.Add(new Exercise
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ExerciseId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name")),
+                                Language = reader.GetString(reader.GetOrdinal("Language"))
+                            });
+                        }
+
+                        
                     }
 
                     reader.Close();
@@ -255,13 +306,71 @@ namespace StudentExercisesMVC.Controllers
                         cohorts.Add(new Cohort
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
                         });
                     }
 
                     reader.Close();
 
                     return cohorts;
+                }
+            }
+        }
+        private List<Exercise> GetAllExercises()
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using(SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT Id, Name, Language FROM Exercise";
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    List<Exercise> exercises = new List<Exercise>();
+                    while(reader.Read())
+                    {
+                        exercises.Add(new Exercise
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            Language = reader.GetString(reader.GetOrdinal("Language"))
+                        });
+                    }
+                    reader.Close();
+                    return exercises;
+                }
+            }
+        }
+        private List<Instructor> GetInstructorsForStudentCohort(int studentCohortId)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using(SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT Id, FirstName, LastName, SlackHandle, Specialty, CohortId
+                                        FROM Instructor
+                                        WHERE CohortId = @studentCohort";
+                    cmd.Parameters.AddWithValue("@studentCohort", studentCohortId);
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    List<Instructor> instructors = new List<Instructor>();
+                    while (reader.Read())
+                    {
+                        Instructor instructor = new Instructor
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
+                            Specialty = reader.GetString(reader.GetOrdinal("Specialty")),
+                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))
+                        };
+
+                        instructors.Add(instructor);
+                    }
+                    return instructors;
                 }
             }
         }
