@@ -271,7 +271,7 @@ namespace StudentExercisesMVC.Controllers
                             };
                         }
 
-                        if(!reader.IsDBNull(reader.GetInt32(reader.GetOrdinal("ExerciseId"))))
+                        if (!reader.IsDBNull(reader.GetOrdinal("ExerciseId")))
                         {
                             student.Exercises.Add(new Exercise
                             {

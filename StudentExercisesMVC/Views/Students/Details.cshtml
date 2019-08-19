@@ -48,6 +48,8 @@
         </dd>
     </dl>
     <h4>Assigned Exercises:</h4>
+    @if (Model.Exercises.Count > 0)
+    {
     <ul>
         @foreach (var exercise in Model.Exercises)
         {
@@ -56,6 +58,11 @@
             </li>
         }
     </ul>
+    }
+    else
+    {
+        <p>this student doesn't have any assigned exercises</p>
+    }
 </div>
 <div>
     @Html.ActionLink("Edit", "Edit", new {id=Model.Id}) |
